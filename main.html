@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset = "UTF-8">
+    <meta name="viewport" content="width=device-width, inital-scale=1.0">
+    <title>Tower 9 - Logic Puzzle</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --peg-color: #95a5a6;
+            
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--bg-color);
+            color: white;
+            display : flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }/* main events */
+        .game-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 50px;
+            height: 400px;
+            padding: 20px;         
+        } 
+
+        .peg { /* the base of the peg thing*/
+            width: 160px;
+            height: 300px;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            position: relative;
+            border-bottom: 10px solid #555;
+            transition: background 0.2s;
+
+
+        }
+        /* The Pole */
+        .peg::after { 
+            content: '';
+            position: absolute;
+            bottom: 0;
+            width: 12px;
+            height: 100%;
+            background-color: var(--peg-color);
+            z-index: 1;
+            border-radius: 5px;
+        }
+
+        .disk {
+            height: 25px;
+            border-radius: 15px;
+            margin-bottom: 2px;
+            z-index: 2; /* sits infront of the pole!! */
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size:12px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .disk:active { cursor: grabbing;}
+    
+        .disk[dragable="false"] {
+            cursor: not-allowed;
+            opacity: 0.8;
+            }
+        .hovered { background: rgba(255, 255, 255, 0.1); }
+
+        .controls { margin-top: 30px; text-align: center; }
+        #message {color: #f1c40f; font-size: 1.2rem; margin-top:10px; height: 30px;}
+    </style>
+</head>
+<body>
+
+    <h1>Tower Of Hanoi</h1>
+    <p>Drag the top disk to move it</p> 
+    <p>Moves: <span id="move-count">0</span></p>
+
+
+    <div class ="game-container">
+        <div class="peg" id = "peg-0" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="clearHover(event)"></div>
+        <div class="peg" id = "peg-1" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="clearHover(event)"></div>
+        <div class="peg" id = "peg-2" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="clearHover(event)"></div>
+    </div>
+    <div id="message"></div>
+    <button onclick="initGame()" style="padding: 10px 25px; cursor: pointer; border-radius: 5px; border: none; background: #3498db; color: white;">Restart Game</button>
+
+    <script>
+        const totalDisks = 9;
+        let moves = 0;
+        const colors = ['#FF595E', '#FF924C', '#FFCA3A', '#C5CA30', '#8AC926', '#52A675', '#1982C4', '#4267AC', '#6A4C93'];
+
+        function initGame() {
+            moves = 0;
+            document.getElementById('move-count').innerText = moves;
+            document.getElementById('message').innerText = '';
+
+
+            const pegs = document.querySelectorAll('.peg');
+            pegs.forEach(peg => peg.innerHTML = '');
+
+            for (let i = totalDisks; i > 0; i--) {
+                const disk = document.createElement('div');
+                disk.id = 'disk-' + i;
+                disk.className = 'disk';
+                disk.style.width = (i * 15 + 30) + 'px';
+                disk.style.backgroundColor = colors[i - 1]; 
+                disk.innerText = i;
+
+                // sets the data attribute for size comparison
+                disk.dataset.size = i;
+
+                disk.addEventListener('dragstart', dragStart);
+                document.getElementById('peg-0').appendChild(disk);
+            }
+            updateDraggableStatus();
+        }
+        // only the top disk should be able to be dragged.
+        function updateDraggableStatus() {
+            const pegs = document.querySelectorAll('.peg')
+            pegs.forEach(peg =>{
+                const disks = peg.querySelectorAll('.disk');
+                disks.forEach((disk, index) => {
+                    // in flex dierection : collumn-reverese so the top disk is the last child 
+                    const isTop = (index === disks.length - 1);
+                    disk.setAttribute('draggable', isTop);
+                    disk.style.opacity = isTop ? "1" : "0.7";
+                });
+            
+            });
+        };
+
+
+        function dragStart(event) {
+            event.dataTransfer.setData("text", event.target.id);
+        }
+
+        function allowDrop(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('hovered');
+        }
+
+        function clearHover(event) {
+            event.currentTarget.classList.remove('hovered');
+        }
+
+        function drop(event) {
+            event.preventDefault();
+            const peg = event.currentTarget;
+            peg.classList.remove('hovered');
+
+            const diskId = event.dataTransfer.getData("text");
+            const disk = document.getElementById(diskId);
+            const diskSize = parseInt(disk.dataset.size);
+
+            const topDisk = peg.lastElementChild;
+            const topDiskSize = topDisk ? parseInt(topDisk.dataset.size): 999;
+
+            // logic: Can only drop on empty peg or a larger disk
+            if (diskSize < topDiskSize) {
+                peg.appendChild(disk);
+                moves++;
+                document.getElementById('move-count').innerText = moves;
+                updateDraggableStatus();
+                checkWin();
+            } else {
+                document.getElementById('message').innerText = "You Cant Put a Larger Disk on a Smaller One!"
+                setTimeout(() => { document.getElementById('message').innerText = "";}, 2000);
+            }
+        } 
+
+        function checkWin() {
+            const lastPeg = document.getElementById('peg-2');
+            if (lastPeg.children.length === totalDisks) {
+                document.getElementById('message').innerText = "🎉 You Solved it!!";
+                const disks = document.querySelectorAll('.disk');
+                disks.forEach(d => d.setAttribute('draggable', false));
+            }
+        }
+
+
+        initGame();
+    </script>
+</body>
+</html>

@@ -8,8 +8,11 @@ The goal is to move all the disks from the left side to the right side in the le
 
 coded using HTML, CSS, And javaScript
 
-Website to try it out for yourself.
-https://tower-of-hanoi-production.up.railway.app/
+Website to try it out for yourself: <https://connorsawaya.github.io/Tower-Of-Hanoi/>.
+
+## Deploy
+
+GitHub Pages deploys automatically whenever changes reach `main`; you can also run the workflow manually from the Actions tab. The site is a static HTML/CSS/JavaScript game and does not require secrets or a backend.
 please Let me know what you think, any issues, future update ideas etc...
 
 photo of the main screen !!
